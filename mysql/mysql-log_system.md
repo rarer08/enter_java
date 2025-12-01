@@ -34,7 +34,7 @@ MySQL的日志系统不只是一个的单一日志，它是一套分工明确、
 - 关键生命周期事件问题排查（如主从切换故障，ssl配置错误信息）
 
 **关键配置参数**
-- `log-error`：指定错误日志文件的路径和名称，默认在Data目录下的`hostname.log`
+- `log-error`：指定错误日志文件的路径和名称，默认在Data目录下的`hostname.err`
 - `log_error_verbosity`：指定错误日志的详细程度，MySQL5.7+后默认为2，取值范围为1-3，分别表示不同详细程度的日志信息，1=仅错误，2=错误+警告，3=错误+警告+信息
 
 [error log 官网地址](https://dev.mysql.com/doc/refman/8.0/en/error-log.html)
@@ -73,7 +73,7 @@ MySQL的日志系统不只是一个的单一日志，它是一套分工明确、
 <!-- https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_rollback_segments -->
 是InnoDB 存储引擎的事务日志，记录了事务操作修改数据页的**物理变更**，而非SQL语句本身。
 保证事务的持久性，确保在系统崩溃后可以通过redo log恢复已经提交的事务
-实现WAL（Write-Ahead Logging），顺序写替代随机写，提供写入性能。
+实现WAL（Write-Ahead Logging），顺序写替代随机写，提高写入性能。
 
 **典型应用场景**
 
