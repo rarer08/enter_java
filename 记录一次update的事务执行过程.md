@@ -24,16 +24,15 @@ flowchart TD
     B --> C
     
     subgraph C ["提交阶段 (2PC)"]
-        C1[事务 Commit]
-        C2[刷 Redo Log Buffer 到磁盘<br>（Prepare阶段）]
-        C3[写 Binlog 到磁盘]
-        C4[刷 Redo Log 到磁盘<br>（Commit阶段）]
+        C1[刷 Redo Log Buffer 到磁盘<br>（Prepare阶段）]
+        C2[写 Binlog 到磁盘]
+        C3[刷 Redo Log 到磁盘<br>（Commit阶段）]
     end
 
     C --> D[返回客户端成功]
 
-    C2 -.-> E[后台异步任务]
-    C4 -.-> E
+    C1 -.-> E[后台异步任务]
+    C3 -.-> E
 
     subgraph E [后台处理]
         E1[将脏页刷回磁盘<br>（Checkpoint机制）]
