@@ -1,0 +1,61 @@
+flowchart TD
+    %% 客户端发起请求
+    Start["客户端发起 UPDATE 语句"] --> Parser
+    
+    subgraph Parser [SQL 处理层]
+        direction LR
+        SQLParse[SQL解析与优化] --> PlanGen[生成执行计划]
+    end
+    
+    Parser --> InnoDBEngine
+    
+    subgraph InnoDBEngine [InnoDB 引擎层]
+        direction LR
+        CheckBP{检查 Buffer Pool}
+        
+        CheckBP -->|数据页存在| MemoryUpdate["内存中锁定数据页"]
+        CheckBP -->|数据页不存在| LoadFromDisk["从磁盘加载数据页<br>到 Buffer Pool"]
+        
+        LoadFromDisk --> MemoryUpdate
+        MemoryUpdate --> WriteUndo["写 Undo Log<br>（用于回滚和MVCC）"]
+        MemoryUpdate --> WriteCache["更新数据页内存"] 
+        MemoryUpdate --> WriteRedoBuffer["写 Redo Log Buffer<br>（记录物理修改）"]
+    end
+    
+    InnoDBEngine --> TwoPC
+    
+    subgraph TwoPC [两阶段提交]
+        direction LR
+        Prepare["Prepare阶段<br>刷 Redo Log Buffer 到磁盘"] --> WriteBinlog["写 Binlog 到磁盘"]
+        WriteBinlog --> Commit["Commit阶段<br>提交事务"]
+    end
+    
+    Commit --> Success["返回客户端<br>UPDATE 成功"]
+    
+    Prepare -.-> AsyncTask
+    Commit -.-> AsyncTask
+    
+    subgraph AsyncTask [后台异步任务]
+        direction LR
+        Checkpoint["Checkpoint 机制<br>将脏页刷回磁盘"]
+        Purge["Purge 线程<br>清理旧版本数据"]
+        
+        Checkpoint --> Purge
+    end
+    %% 样式定义
+    classDef client fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef parser fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef engine fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef commit fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef async fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    
+    class Start,Success client
+    class Parser parser
+    class InnoDBEngine engine
+    class TwoPC commit
+    class AsyncTask async
+    
+    %% 节点形状优化
+    style Start shape:rect,stroke-dasharray:5 5
+    style CheckBP shape:diamond,fill:#bbdefb
+    style Success shape:rect,fill:#c8e6c9
